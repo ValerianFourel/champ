@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
-
+# We need to refit this to use text as well
 import torch
 import torch.nn as nn
 import torch.utils.checkpoint
