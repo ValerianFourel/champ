@@ -34,6 +34,7 @@ class MultiGuidance2ImagePipeline(DiffusionPipeline):
         self,
         vae,
         image_encoder,
+        text_encoder, # we add the text_encoder
         reference_unet,
         denoising_unet,
         guidance_encoder_depth,
@@ -54,6 +55,7 @@ class MultiGuidance2ImagePipeline(DiffusionPipeline):
         self.register_modules(
             vae=vae,
             image_encoder=image_encoder,
+            text_encoder = text_encoder,
             reference_unet=reference_unet,
             denoising_unet=denoising_unet,
             guidance_encoder_depth=guidance_encoder_depth,
@@ -209,6 +211,11 @@ class MultiGuidance2ImagePipeline(DiffusionPipeline):
         clip_image_embeds = self.image_encoder(
             clip_image.to(device, dtype=self.image_encoder.dtype)
         ).image_embeds
+        ############################
+        # Modify the Pipeline to add the text
+
+        ############################
+
         image_prompt_embeds = clip_image_embeds.unsqueeze(1)
         uncond_image_prompt_embeds = torch.zeros_like(image_prompt_embeds)
 

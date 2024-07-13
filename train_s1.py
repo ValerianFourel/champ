@@ -25,6 +25,7 @@ from omegaconf import OmegaConf
 from PIL import Image, ImageOps
 from tqdm.auto import tqdm
 from transformers import CLIPVisionModelWithProjection
+from transformers import CLIPTextModel, CLIPTokenizer
 
 from models.champ_model import ChampModel
 from models.guidance_encoder import GuidanceEncoder
@@ -37,6 +38,7 @@ from datasets.data_utils import mask_to_bkgd
 from utils.tb_tracker import TbTracker
 from utils.util import seed_everything, delete_additional_ckpt, compute_snr
 
+# we need to modif ythe Image Pipeline
 from pipelines.pipeline_guidance2image import MultiGuidance2ImagePipeline
 
 warnings.filterwarnings("ignore")
@@ -116,6 +118,18 @@ def validate(
     
     return val_images, ref_img_pil, guid_img_pil_lst
 
+
+#####################
+#
+# Difficulty of adding the text encoder
+
+text_encoder = CLIPTextModel.from_pretrained(
+            args.pretrained_model_name_or_path, subfolder="text_encoder", revision=args.revision
+        )
+
+
+##################
+
 def log_validation(
     cfg,
     vae,
@@ -141,9 +155,15 @@ def log_validation(
     vae = vae.to(dtype=dtype)
     image_enc = image_enc.to(dtype=dtype)
     
+
+    # We have to readapt from: https://github.com/huggingface/diffusers/blob/main/src/diffusers/pipelines/stable_diffusion/pipeline_stable_diffusion_depth2img.py
+    # we have to this.
+
+    
     pipeline = MultiGuidance2ImagePipeline(
         vae=vae,
         image_encoder=image_enc,
+        text_encoder=text_encoder, # we are adding the text_encoder to the base code
         reference_unet=reference_unet,
         denoising_unet=denoising_unet,
         **guidance_encoder_group,
@@ -268,6 +288,8 @@ def main(cfg):
         },
     ).to(device="cuda")
 
+
+
     image_enc = CLIPVisionModelWithProjection.from_pretrained(
         cfg.image_encoder_path,
     ).to(dtype=weight_dtype, device="cuda")    
@@ -361,7 +383,6 @@ def main(cfg):
     )            
     
     train_dataset = ImageDataset(
-        video_folder=cfg.data.video_folder,
         image_size=cfg.data.image_size,
         sample_margin=cfg.data.sample_margin,
         data_parts=cfg.data.data_parts,

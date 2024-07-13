@@ -4,4 +4,6 @@ results/
 *.zip
 .vscode/
 .hypothesis/
-__pycache__/
+__pycache__//pretrained_models/
+/example_data/
+example_data.tar.gz
